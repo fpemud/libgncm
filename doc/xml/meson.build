@@ -1,0 +1,11 @@
+ent_conf = configuration_data()
+ent_conf.set('PACKAGE', 'GDHCP')
+ent_conf.set('PACKAGE_BUGREPORT', 'https://github.com/fpemud/gdhcp/issues')
+ent_conf.set('PACKAGE_NAME', 'GDHCP')
+ent_conf.set('PACKAGE_STRING', 'gdhcp')
+ent_conf.set('PACKAGE_TARNAME', 'gdhcp-' + meson.project_version())
+ent_conf.set('PACKAGE_URL', 'https://github.com/fpemud/gdhcp')
+ent_conf.set('PACKAGE_VERSION', meson.project_version())
+ent_conf.set('PACKAGE_API_VERSION', apiversion)
+configure_file(input: 'gtkdocentities.ent.in', output: 'gtkdocentities.ent', configuration: ent_conf)
+
