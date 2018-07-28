@@ -433,7 +433,7 @@ merge_one_ip_config (NMResolvConfData *rc,
 			if (IN6_IS_ADDR_LINKLOCAL (addr)) {
 				const char *ifname;
 
-				ifname = nm_platform_link_get_name (NM_PLATFORM_GET, ifindex);
+				ifname = gncm_platform_link_get_name (gncm_platform_GET, ifindex);
 				if (ifname) {
 					g_strlcat (buf, "%", sizeof (buf));
 					g_strlcat (buf, ifname, sizeof (buf));
@@ -984,26 +984,26 @@ get_ip_rdns_domains (NMIPConfig *ip_config)
 
 	if (addr_family == AF_INET) {
 		NMIP4Config *ip4 = (gpointer) ip_config;
-		const NMPlatformIP4Address *address;
-		const NMPlatformIP4Route *route;
+		const GncmPlatformIP4Address *address;
+		const GncmPlatformIP4Route *route;
 
 		nm_ip_config_iter_ip4_address_for_each (&ipconf_iter, ip4, &address)
 			byx_utils_get_reverse_dns_domains_ip4 (address->address, address->plen, domains);
 
 		nm_ip_config_iter_ip4_route_for_each (&ipconf_iter, ip4, &route) {
-			if (!NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route))
+			if (!gncm_platform_IP_ROUTE_IS_DEFAULT (route))
 				byx_utils_get_reverse_dns_domains_ip4 (route->network, route->plen, domains);
 		}
 	} else {
 		NMIP6Config *ip6 = (gpointer) ip_config;
-		const NMPlatformIP6Address *address;
-		const NMPlatformIP6Route *route;
+		const GncmPlatformIP6Address *address;
+		const GncmPlatformIP6Route *route;
 
 		nm_ip_config_iter_ip6_address_for_each (&ipconf_iter, ip6, &address)
 			byx_utils_get_reverse_dns_domains_ip6 (&address->address, address->plen, domains);
 
 		nm_ip_config_iter_ip6_route_for_each (&ipconf_iter, ip6, &route) {
-			if (!NM_PLATFORM_IP_ROUTE_IS_DEFAULT (route))
+			if (!gncm_platform_IP_ROUTE_IS_DEFAULT (route))
 				byx_utils_get_reverse_dns_domains_ip6 (&route->network, route->plen, domains);
 		}
 	}
@@ -1987,7 +1987,7 @@ _get_config_variant (NMDnsManager *self)
 			}
 		}
 
-		ifname = nm_platform_link_get_name (NM_PLATFORM_GET, ip_data->data->ifindex);
+		ifname = gncm_platform_link_get_name (gncm_platform_GET, ip_data->data->ifindex);
 		if (ifname) {
 			g_variant_builder_add (&entry_builder,
 			                       "{sv}",
