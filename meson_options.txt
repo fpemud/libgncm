@@ -1,6 +1,5 @@
 # -*- meson -*-
 
-
 # Support for multiple programming languages
 option('with_introspection', type: 'boolean', value: true)
 option('with_vapi', type: 'boolean', value: true)

@@ -5,15 +5,6 @@ libgncm_header_dir = join_paths(get_option('includedir'), libgncm_header_subdir)
 
 
 #
-# Generate libgncm-version.h
-#
-version_data = configuration_data()
-version_data.set('MAJOR_VERSION', libgncm_version_major)
-version_data.set('MINOR_VERSION', libgncm_version_minor)
-version_data.set('VERSION', meson.project_version())
-
-
-#
 # Generate library file
 #
 libgncm_public_headers = [
@@ -64,12 +55,11 @@ if get_option('with_introspection')
               namespace: 'gncm',
           symbol_prefix: 'gncm_',
       identifier_prefix: 'GNCM',
-              link_with: gncm,
+              link_with: libgncm,
                includes: [ 'GLib-2.0' ],
                 install: true,
         install_dir_gir: girdir,
     install_dir_typelib: typelibdir,
-#             extra_args: [ '--c-include=gdhcp.h' ],
   )
 
   if get_option('with_vapi')
