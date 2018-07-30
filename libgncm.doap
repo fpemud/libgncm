@@ -5,12 +5,12 @@
          xmlns:gnome="http://api.gnome.org/doap-extensions#"
          xmlns="http://usefulinc.com/ns/doap#">
 
-  <name>gdhcp</name>
-  <shortname>gdhcp</shortname>
-  <shortdesc>DHCP library with GLib integration</shortdesc>
-  <description>DHCP library with GLib integration.</description>
-  <homepage rdf:resource="https://github.com/fpemud/gdhcp" />
-  <download-page rdf:resource="https://github.com/fpemud/gdhcp" />
+  <name>libgncm</name>
+  <shortname>libgncm</shortname>
+  <shortdesc>Global Network Config Management Library</shortdesc>
+  <description>Global Network Config Management Librarys.</description>
+  <homepage rdf:resource="https://github.com/fpemud/libgncm" />
+  <download-page rdf:resource="https://github.com/fpemud/libgncm" />
 
   <programming-language>C</programming-language>
 

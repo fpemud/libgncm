@@ -5,7 +5,7 @@
 # General operations
 #
 project('libgncm', 'c',
-          version: '0.1',
+          version: '1.0',
           license: 'GPL3',
     meson_version: '>=0.40.1',
   default_options: [ 'warning_level=1', 'buildtype=debugoptimized', 'c_std=gnu11' ]
@@ -66,9 +66,6 @@ test_c_args = [
 if get_option('buildtype') != 'plain'
   test_c_args += '-fstack-protector-strong'
 endif
-if get_option('enable_profiling')
-  test_c_args += '-pg'
-endif
 
 global_c_args = []
 foreach arg: test_c_args
@@ -108,7 +105,7 @@ libdir = get_option('libdir')
 vapidir = join_paths(get_option('datadir'), 'vala', 'vapi')
 gnome = import('gnome')
 # libversion is needed by subdirectory meson.build files
-# gdhcp_version_major and gdhcp_version_minor are needed by subdirectory meson.build files
+# libgncm_version_major and libgncm_version_minor are needed by subdirectory meson.build files
 # hidden_visibility_args is needed by subdirectory meson.build files
 
 
@@ -116,7 +113,6 @@ gnome = import('gnome')
 # call subdirectory meson.build files
 #
 subdir('src')
-#subdir('tests')
 if get_option('enable_gtk_doc')
   subdir('doc')
 endif

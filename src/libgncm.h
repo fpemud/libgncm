@@ -29,10 +29,6 @@
 #include <glib.h>
 #include <glib-object.h>
 
-#define LIBGNCM_INSIDE
-# include "gdhcp-version.h"
-#undef LIBGNCM_INSIDE
-
 G_BEGIN_DECLS
 
 #ifndef LIBGNCM_EXTERN
