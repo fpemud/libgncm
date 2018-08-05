@@ -47,7 +47,40 @@ struct _GncmManagerClass
 };
 
 LIBGNCM_EXTERN
-int gncm_manager_add_nameserver(GncmManager *manager, const char *nameserver_address);
+GncmManager *gncm_manager_get();
+
+LIBGNCM_EXTERN
+int gncm_manager_add_nameserver(GncmManager *manager, const gchar *nameserver_address);
+
+LIBGNCM_EXTERN
+int gncm_manager_add_nameserver_with_domains(GncmManager *manager, const gchar *nameserver_address, GList *domain_list);
+
+LIBGNCM_EXTERN
+int gncm_manager_set_nameserver_domains(GncmManager *manager, int nameserver_id, GList *domain_list);
+
+LIBGNCM_EXTERN
+void gncm_manager_remove_nameserver(GncmManager *manager, int nameserver_id);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 LIBGNCM_EXTERN
 void gdhcp_client_stop(GDHCPClient *client);

@@ -21,11 +21,9 @@
  *   and others
  */
 
-#ifndef __NETWORKMANAGER_DNS_MANAGER_H__
-#define __NETWORKMANAGER_DNS_MANAGER_H__
+#ifndef __GNCM_NAMESERVER_H__
+#define __GNCM_NAMESERVER_H__
 
-#include "nm-ip4-config.h"
-#include "nm-ip6-config.h"
 #include "nm-setting-connection.h"
 
 typedef enum {
@@ -123,4 +121,4 @@ typedef enum {
 
 void nm_dns_manager_stop (NMDnsManager *self);
 
-#endif /* __NETWORKMANAGER_DNS_MANAGER_H__ */
+#endif /* __GNCM_NAMESERVER_H__ */
