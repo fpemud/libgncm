@@ -29,6 +29,10 @@
 #include <glib.h>
 #include <glib-object.h>
 
+#include <netconfig/gncm_nameserver.h>
+#include <netconfig/gncm_internal_network.h>
+#include <netconfig/gncm_hotspot.h>
+
 G_BEGIN_DECLS
 
 #ifndef LIBGNCM_EXTERN
@@ -43,30 +47,29 @@ G_DECLARE_DERIVABLE_TYPE (GncmManager, gncm_manager, GNCM, MANAGER, GObject)
 
 struct _GncmManagerClass
 {
-  GObjectClass parent_class;
+    GObjectClass parent_class;
 };
 
 LIBGNCM_EXTERN
 GncmManager *gncm_manager_get();
 
 LIBGNCM_EXTERN
-int gncm_manager_add_nameserver(GncmManager *manager, const gchar *nameserver_address);
+void gncm_manager_add_nameserver(GncmManager *manager, GncmNameserver *nameserver);
 
 LIBGNCM_EXTERN
-int gncm_manager_add_nameserver_with_domains(GncmManager *manager, const gchar *nameserver_address, GList *domain_list);
+void gncm_manager_remove_nameserver(GncmManager *manager, GncmNameserver *nameserver);
 
 LIBGNCM_EXTERN
-int gncm_manager_set_nameserver_domains(GncmManager *manager, int nameserver_id, GList *domain_list);
+void gncm_manager_add_internal_network(GncmManager *manager, GncmInternalNetwork *internal_network);
 
 LIBGNCM_EXTERN
-void gncm_manager_remove_nameserver(GncmManager *manager, int nameserver_id);
+void gncm_manager_remove_internal_network(GncmManager *manager, GncmInternalNetwork *internal_network);
 
+LIBGNCM_EXTERN
+void gncm_manager_add_hotspot(GncmManager *manager, GncmHotspot *hotspot, const gchar *interface);
 
-
-
-
-
-
+LIBGNCM_EXTERN
+void gncm_manager_remove_hotspot(GncmManager *manager, GncmHotspot *hotspot);
 
 
 

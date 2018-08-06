@@ -39,8 +39,7 @@ enum {
 	NM_DNS_PRIORITY_DEFAULT_VPN     = 50,
 };
 
-struct _NMDnsConfigData;
-struct _NMDnsManager;
+struct _GncmNameserver;
 
 typedef struct {
 	struct _NMDnsConfigData *data;
@@ -54,71 +53,26 @@ typedef struct {
 	} domains;
 } NMDnsIPConfigData;
 
-typedef struct _NMDnsConfigData {
-	struct _NMDnsManager *self;
-	CList data_lst_head;
-	int ifindex;
-} NMDnsConfigData;
+#define GNCM_TYPE_NAMESERVER (gncm_nameserver_get_type ())
+#define GNCM_NAMESERVER(o) (G_TYPE_CHECK_INSTANCE_CAST ((o), GNCM_TYPE_NAMESERVER, GncmNameserver))
+#define GNCM_NAMESERVER_CLASS(k) (G_TYPE_CHECK_CLASS_CAST((k), GNCM_TYPE_NAMESERVER, GncmNameserverClass))
+#define GNCM_IS_NAMESERVER(o) (G_TYPE_CHECK_INSTANCE_TYPE ((o), GNCM_TYPE_NAMESERVER))
+#define GNCM_IS_NAMESERVER_CLASS(k) (G_TYPE_CHECK_CLASS_TYPE ((k), GNCM_TYPE_NAMESERVER))
+#define GNCM_NAMESERVER_GET_CLASS(o) (G_TYPE_INSTANCE_GET_CLASS ((o), GNCM_TYPE_NAMESERVER, GncmNameserverClass))
 
-#define NM_TYPE_DNS_MANAGER (nm_dns_manager_get_type ())
-#define NM_DNS_MANAGER(o) (G_TYPE_CHECK_INSTANCE_CAST ((o), NM_TYPE_DNS_MANAGER, NMDnsManager))
-#define NM_DNS_MANAGER_CLASS(k) (G_TYPE_CHECK_CLASS_CAST((k), NM_TYPE_DNS_MANAGER, NMDnsManagerClass))
-#define NM_IS_DNS_MANAGER(o) (G_TYPE_CHECK_INSTANCE_TYPE ((o), NM_TYPE_DNS_MANAGER))
-#define NM_IS_DNS_MANAGER_CLASS(k) (G_TYPE_CHECK_CLASS_TYPE ((k), NM_TYPE_DNS_MANAGER))
-#define NM_DNS_MANAGER_GET_CLASS(o) (G_TYPE_INSTANCE_GET_CLASS ((o), NM_TYPE_DNS_MANAGER, NMDnsManagerClass))
+typedef struct _GncmNameserver GncmNameserver;
+typedef struct _GncmNameserverClass GncmNameserverClass;
 
-/* properties */
-#define NM_DNS_MANAGER_MODE "mode"
-#define NM_DNS_MANAGER_RC_MANAGER "rc-manager"
-#define NM_DNS_MANAGER_CONFIGURATION "configuration"
+GType gncm_nameserver_get_type (void);
 
-/* internal signals */
-#define NM_DNS_MANAGER_CONFIG_CHANGED "config-changed"
+GncmNameserver *gncm_nameserver_new (const gchar *nameserver_address, int priority);
 
-typedef struct _NMDnsManager NMDnsManager;
-typedef struct _NMDnsManagerClass NMDnsManagerClass;
+GncmNameserver *gncm_nameserver_new_with_domains (const gchar *nameserver_address, int priority, GList *domain_list);
 
-GType nm_dns_manager_get_type (void);
+void gncm_nameserver_add_domain (GncmNameserver *self, const gchar *domain);
 
-NMDnsManager * nm_dns_manager_get (void);
+void gncm_nameserver_remove_domain (GncmNameserver *self, const gchar *domain);
 
-/* Allow changes to be batched together */
-void nm_dns_manager_begin_updates (NMDnsManager *self, const char *func);
-void nm_dns_manager_end_updates (NMDnsManager *self, const char *func);
-
-gboolean nm_dns_manager_set_ip_config (NMDnsManager *self,
-                                       NMIPConfig *ip_config,
-                                       NMDnsIPConfigType ip_config_type);
-
-void nm_dns_manager_set_initial_hostname (NMDnsManager *self,
-                                          const char *hostname);
-void nm_dns_manager_set_hostname         (NMDnsManager *self,
-                                          const char *hostname,
-                                          gboolean skip_update);
-
-/**
- * NMDnsManagerResolvConfManager
- * @NM_DNS_MANAGER_RESOLV_CONF_MAN_UNKNOWN: unspecified rc-manager.
- * @NM_DNS_MANAGER_RESOLV_CONF_MAN_UNMANAGED: do not touch /etc/resolv.conf
- *   (but still write the internal copy -- unless it is symlinked by
- *   /etc/resolv.conf)
- * @NM_DNS_MANAGER_RESOLV_CONF_MAN_IMMUTABLE: similar to "unmanaged",
- *   but indicates that resolv.conf cannot be modified.
- * @NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK: NM writes resolv.conf
- *   by symlinking it to the run state directory.
- * @NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE: Like SYMLINK, but instead of
- *   symlinking /etc/resolv.conf, write it as a file.
- *
- * NMDnsManager's management of resolv.conf
- */
-typedef enum {
-	NM_DNS_MANAGER_RESOLV_CONF_MAN_UNKNOWN,
-	NM_DNS_MANAGER_RESOLV_CONF_MAN_UNMANAGED,
-	NM_DNS_MANAGER_RESOLV_CONF_MAN_IMMUTABLE,
-	NM_DNS_MANAGER_RESOLV_CONF_MAN_SYMLINK,
-	NM_DNS_MANAGER_RESOLV_CONF_MAN_FILE,
-} NMDnsManagerResolvConfManager;
-
-void nm_dns_manager_stop (NMDnsManager *self);
+void gncm_nameserver_set_domain_list (GncmNameserver *self, GList *domain_list);
 
 #endif /* __GNCM_NAMESERVER_H__ */
