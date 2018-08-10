@@ -85,7 +85,7 @@ enum {
 	LAST_SIGNAL
 };
 
-NM_GOBJECT_PROPERTIES_DEFINE (NMDnsManager,
+NM_GOBJECT_PROPERTIES_DEFINE (GncmNameserver,
 	PROP_MODE,
 	PROP_RC_MANAGER,
 	PROP_CONFIGURATION,
@@ -112,7 +112,7 @@ typedef struct {
 	guint8 hash[HASH_LEN];  /* SHA1 hash of current DNS config */
 	guint8 prev_hash[HASH_LEN];  /* Hash when begin_updates() was called */
 
-	NMDnsManagerResolvConfManager rc_manager;
+	GncmNameserverResolvConfManager rc_manager;
 	char *mode;
 	NMDnsPlugin *plugin;
 
@@ -123,22 +123,22 @@ typedef struct {
 		guint num_restarts;
 		guint timer;
 	} plugin_ratelimit;
-} NMDnsManagerPrivate;
+} GncmNameserverPrivate;
 
-struct _NMDnsManager {
-	ByxDBusObject parent;
-	NMDnsManagerPrivate _priv;
+struct _GncmNameserver {
+	GObject parent;
+	GncmNameserverPrivate _priv;
 };
 
-struct _NMDnsManagerClass {
-	ByxDBusObjectClass parent;
+struct _GncmNameserverClass {
+	GObjectClass parent;
 };
 
-G_DEFINE_TYPE (NMDnsManager, nm_dns_manager, NM_TYPE_DBUS_OBJECT)
+G_DEFINE_TYPE (GncmNameserver, gncm_nameserver, G_TYPE_OBJECT)
 
-#define NM_DNS_MANAGER_GET_PRIVATE(self) _BYX_GET_PRIVATE(self, NMDnsManager, NM_IS_DNS_MANAGER)
+#define GNCM_NAMESERVER_GET_PRIVATE(self) _BYX_GET_PRIVATE(self, GncmNameserver, GNCM_IS_NAMESERVER)
 
-BYX_DEFINE_SINGLETON_GETTER (NMDnsManager, nm_dns_manager_get, NM_TYPE_DNS_MANAGER);
+BYX_DEFINE_SINGLETON_GETTER (GncmNameserver, gncm_nameserver_get, NM_TYPE_DNS_MANAGER);
 
 /*****************************************************************************/
 
@@ -150,7 +150,7 @@ BYX_DEFINE_SINGLETON_GETTER (NMDnsManager, nm_dns_manager_get, NM_TYPE_DNS_MANAG
         \
         if (byx_logging_enabled (__level, _NMLOG_DOMAIN)) { \
             char __prefix[20]; \
-            const NMDnsManager *const __self = (self); \
+            const GncmNameserver *const __self = (self); \
             \
             _byx_log (__level, _NMLOG_DOMAIN, 0, NULL, NULL, \
                      "%s%s: " _NM_UTILS_MACRO_FIRST (__VA_ARGS__), \
@@ -190,7 +190,7 @@ domain_is_routing (const char *domain)
 
 /*****************************************************************************/
 
-NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_rc_manager_to_string, NMDnsManagerResolvConfManager,
+NM_UTILS_LOOKUP_STR_DEFINE_STATIC (_rc_manager_to_string, GncmNameserverResolvConfManager,
 	NM_UTILS_LOOKUP_DEFAULT_WARN (NULL),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_DNS_MANAGER_RESOLV_CONF_MAN_UNKNOWN,        "unknown"),
 	NM_UTILS_LOOKUP_STR_ITEM (NM_DNS_MANAGER_RESOLV_CONF_MAN_UNMANAGED,      "unmanaged"),
@@ -213,7 +213,7 @@ static void
 _ASSERT_config_data (const NMDnsConfigData *data)
 {
 	nm_assert (data);
-	nm_assert (NM_IS_DNS_MANAGER (data->self));
+	nm_assert (GNCM_IS_NAMESERVER (data->self));
 	nm_assert (data->ifindex > 0);
 }
 
@@ -243,7 +243,7 @@ _ip_config_data_new (NMDnsConfigData *data,
 	ip_data->ip_config = g_object_ref (ip_config);
 	ip_data->ip_config_type = ip_config_type;
 	c_list_link_tail (&data->data_lst_head, &ip_data->data_lst);
-	c_list_link_tail (&NM_DNS_MANAGER_GET_PRIVATE (data->self)->ip_config_lst_head, &ip_data->ip_config_lst);
+	c_list_link_tail (&GNCM_NAMESERVER_GET_PRIVATE (data->self)->ip_config_lst_head, &ip_data->ip_config_lst);
 
 	g_signal_connect (ip_config,
 	                  NM_IS_IP4_CONFIG (ip_config)
@@ -333,9 +333,9 @@ _ip_config_lst_cmp (const CList *a,
 }
 
 static CList *
-_ip_config_lst_head (NMDnsManager *self)
+_ip_config_lst_head (GncmNameserver *self)
 {
-	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
+	GncmNameserverPrivate *priv = GNCM_NAMESERVER_GET_PRIVATE (self);
 
 	if (priv->ip_config_lst_need_sort) {
 		priv->ip_config_lst_need_sort = FALSE;
@@ -574,12 +574,12 @@ _read_link_cached (const char *path, gboolean *is_cached, char **cached)
 #define RESOLV_CONF_TMP "/etc/.resolv.conf.NetworkManager"
 
 static SpawnResult
-update_resolv_conf (NMDnsManager *self,
+update_resolv_conf (GncmNameserver *self,
                     char **searches,
                     char **nameservers,
                     char **options,
                     GError **error,
-                    NMDnsManagerResolvConfManager rc_manager)
+                    GncmNameserverResolvConfManager rc_manager)
 {
 	FILE *f;
 	gboolean success;
@@ -774,7 +774,7 @@ update_resolv_conf (NMDnsManager *self,
 }
 
 static void
-compute_hash (NMDnsManager *self, const NMGlobalDnsConfig *global, guint8 buffer[HASH_LEN])
+compute_hash (GncmNameserver *self, const NMGlobalDnsConfig *global, guint8 buffer[HASH_LEN])
 {
 	GChecksum *sum;
 	gsize len = HASH_LEN;
@@ -873,7 +873,7 @@ _ptrarray_to_strv (GPtrArray *parray)
 }
 
 static void
-_collect_resolv_conf_data (NMDnsManager *self,
+_collect_resolv_conf_data (GncmNameserver *self,
                            NMGlobalDnsConfig *global_config,
                            char ***out_searches,
                            char ***out_options,
@@ -881,7 +881,7 @@ _collect_resolv_conf_data (NMDnsManager *self,
                            char ***out_nis_servers,
                            const char **out_nis_domain)
 {
-	NMDnsManagerPrivate *priv;
+	GncmNameserverPrivate *priv;
 	guint i, num, len;
 	NMResolvConfData rc = {
 		.nameservers = g_ptr_array_new (),
@@ -891,7 +891,7 @@ _collect_resolv_conf_data (NMDnsManager *self,
 		.nis_servers = g_ptr_array_new (),
 	};
 
-	priv = NM_DNS_MANAGER_GET_PRIVATE (self);
+	priv = GNCM_NAMESERVER_GET_PRIVATE (self);
 
 	if (global_config)
 		merge_global_dns_config (&rc, global_config);
@@ -1051,7 +1051,7 @@ domain_is_shadowed (GHashTable *ht,
 }
 
 static void
-rebuild_domain_lists (NMDnsManager *self)
+rebuild_domain_lists (GncmNameserver *self)
 {
 	NMDnsIPConfigData *ip_data;
 	gs_unref_hashtable GHashTable *ht = NULL;
@@ -1149,7 +1149,7 @@ rebuild_domain_lists (NMDnsManager *self)
 }
 
 static void
-clear_domain_lists (NMDnsManager *self)
+clear_domain_lists (GncmNameserver *self)
 {
 	NMDnsIPConfigData *ip_data;
 	CList *head;
@@ -1162,11 +1162,11 @@ clear_domain_lists (NMDnsManager *self)
 }
 
 static gboolean
-update_dns (NMDnsManager *self,
+update_dns (GncmNameserver *self,
             gboolean no_caching,
             GError **error)
 {
-	NMDnsManagerPrivate *priv;
+	GncmNameserverPrivate *priv;
 	const char *nis_domain = NULL;
 	gs_strfreev char **searches = NULL;
 	gs_strfreev char **options = NULL;
@@ -1180,7 +1180,7 @@ update_dns (NMDnsManager *self,
 
 	g_return_val_if_fail (!error || !*error, FALSE);
 
-	priv = NM_DNS_MANAGER_GET_PRIVATE (self);
+	priv = GNCM_NAMESERVER_GET_PRIVATE (self);
 
 	if (priv->is_stopped) {
 		_LOGD ("update-dns: not updating resolv.conf (is stopped)");
@@ -1302,7 +1302,7 @@ update_dns (NMDnsManager *self,
 static void
 plugin_failed (NMDnsPlugin *plugin, gpointer user_data)
 {
-	NMDnsManager *self = NM_DNS_MANAGER (user_data);
+	GncmNameserver *self = NM_DNS_MANAGER (user_data);
 	GError *error = NULL;
 
 	/* Errors with non-caching plugins aren't fatal */
@@ -1320,7 +1320,7 @@ static gboolean
 plugin_child_quit_update_dns (gpointer user_data)
 {
 	GError *error = NULL;
-	NMDnsManager *self = NM_DNS_MANAGER (user_data);
+	GncmNameserver *self = NM_DNS_MANAGER (user_data);
 
 	/* Let the plugin try to spawn the child again */
 	if (!update_dns (self, FALSE, &error)) {
@@ -1334,8 +1334,8 @@ plugin_child_quit_update_dns (gpointer user_data)
 static void
 plugin_child_quit (NMDnsPlugin *plugin, int exit_status, gpointer user_data)
 {
-	NMDnsManager *self = NM_DNS_MANAGER (user_data);
-	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
+	GncmNameserver *self = NM_DNS_MANAGER (user_data);
+	GncmNameserverPrivate *priv = GNCM_NAMESERVER_GET_PRIVATE (self);
 	gint64 ts = byx_utils_get_monotonic_timestamp_ms ();
 
 	_LOGW ("plugin %s child quit unexpectedly", nm_dns_plugin_get_name (plugin));
@@ -1366,28 +1366,28 @@ _ip_config_dns_priority_changed (gpointer config,
 {
 	_ASSERT_ip_config_data (ip_data);
 
-	NM_DNS_MANAGER_GET_PRIVATE (ip_data->data->self)->ip_config_lst_need_sort = TRUE;
+	GNCM_NAMESERVER_GET_PRIVATE (ip_data->data->self)->ip_config_lst_need_sort = TRUE;
 }
 
 gboolean
-nm_dns_manager_set_ip_config (NMDnsManager *self,
+gncm_nameserver_set_ip_config (GncmNameserver *self,
                               NMIPConfig *ip_config,
                               NMDnsIPConfigType ip_config_type)
 {
-	NMDnsManagerPrivate *priv;
+	GncmNameserverPrivate *priv;
 	GError *error = NULL;
 	NMDnsIPConfigData *ip_data;
 	NMDnsConfigData *data;
 	int ifindex;
 	NMDnsIPConfigData **p_best;
 
-	g_return_val_if_fail (NM_IS_DNS_MANAGER (self), FALSE);
+	g_return_val_if_fail (GNCM_IS_NAMESERVER (self), FALSE);
 	g_return_val_if_fail (NM_IS_IP_CONFIG (ip_config, AF_UNSPEC), FALSE);
 
 	ifindex = nm_ip_config_get_ifindex (ip_config);
 	g_return_val_if_fail (ifindex > 0, FALSE);
 
-	priv = NM_DNS_MANAGER_GET_PRIVATE (self);
+	priv = GNCM_NAMESERVER_GET_PRIVATE (self);
 
 	data = g_hash_table_lookup (priv->configs, GINT_TO_POINTER (ifindex));
 	if (!data)
@@ -1458,21 +1458,21 @@ changed:
 }
 
 void
-nm_dns_manager_set_initial_hostname (NMDnsManager *self,
+gncm_nameserver_set_initial_hostname (GncmNameserver *self,
                                      const char *hostname)
 {
-	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
+	GncmNameserverPrivate *priv = GNCM_NAMESERVER_GET_PRIVATE (self);
 
 	g_free (priv->hostname);
 	priv->hostname = g_strdup (hostname);
 }
 
 void
-nm_dns_manager_set_hostname (NMDnsManager *self,
+gncm_nameserver_set_hostname (GncmNameserver *self,
                              const char *hostname,
                              gboolean skip_update)
 {
-	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
+	GncmNameserverPrivate *priv = GNCM_NAMESERVER_GET_PRIVATE (self);
 	GError *error = NULL;
 	const char *filtered = NULL;
 
@@ -1500,12 +1500,12 @@ nm_dns_manager_set_hostname (NMDnsManager *self,
 }
 
 void
-nm_dns_manager_begin_updates (NMDnsManager *self, const char *func)
+gncm_nameserver_begin_updates (GncmNameserver *self, const char *func)
 {
-	NMDnsManagerPrivate *priv;
+	GncmNameserverPrivate *priv;
 
 	g_return_if_fail (self != NULL);
-	priv = NM_DNS_MANAGER_GET_PRIVATE (self);
+	priv = GNCM_NAMESERVER_GET_PRIVATE (self);
 
 	/* Save current hash when starting a new batch */
 	if (priv->updates_queue == 0)
@@ -1517,16 +1517,16 @@ nm_dns_manager_begin_updates (NMDnsManager *self, const char *func)
 }
 
 void
-nm_dns_manager_end_updates (NMDnsManager *self, const char *func)
+gncm_nameserver_end_updates (GncmNameserver *self, const char *func)
 {
-	NMDnsManagerPrivate *priv;
+	GncmNameserverPrivate *priv;
 	GError *error = NULL;
 	gboolean changed;
 	guint8 new[HASH_LEN];
 
 	g_return_if_fail (self != NULL);
 
-	priv = NM_DNS_MANAGER_GET_PRIVATE (self);
+	priv = GNCM_NAMESERVER_GET_PRIVATE (self);
 	g_return_if_fail (priv->updates_queue > 0);
 
 	compute_hash (self, byx_config_data_get_global_dns_config (byx_config_get_data (priv->config)), new);
@@ -1550,12 +1550,12 @@ nm_dns_manager_end_updates (NMDnsManager *self, const char *func)
 }
 
 void
-nm_dns_manager_stop (NMDnsManager *self)
+gncm_nameserver_stop (GncmNameserver *self)
 {
-	NMDnsManagerPrivate *priv;
+	GncmNameserverPrivate *priv;
 	GError *error = NULL;
 
-	priv = NM_DNS_MANAGER_GET_PRIVATE (self);
+	priv = GNCM_NAMESERVER_GET_PRIVATE (self);
 
 	if (priv->is_stopped)
 		g_return_if_reached ();
@@ -1583,9 +1583,9 @@ nm_dns_manager_stop (NMDnsManager *self)
 /*****************************************************************************/
 
 static gboolean
-_clear_plugin (NMDnsManager *self)
+_clear_plugin (GncmNameserver *self)
 {
-	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
+	GncmNameserverPrivate *priv = GNCM_NAMESERVER_GET_PRIVATE (self);
 
 	if (priv->plugin) {
 		g_signal_handlers_disconnect_by_func (priv->plugin, plugin_failed, self);
@@ -1599,8 +1599,8 @@ _clear_plugin (NMDnsManager *self)
 	return FALSE;
 }
 
-static NMDnsManagerResolvConfManager
-_check_resconf_immutable (NMDnsManagerResolvConfManager rc_manager)
+static GncmNameserverResolvConfManager
+_check_resconf_immutable (GncmNameserverResolvConfManager rc_manager)
 {
 	struct stat st;
 	int fd, flags;
@@ -1722,10 +1722,10 @@ _resolvconf_resolved_managed (void)
 }
 
 static void
-init_resolv_conf_mode (NMDnsManager *self, gboolean force_reload_plugin)
+init_resolv_conf_mode (GncmNameserver *self, gboolean force_reload_plugin)
 {
-	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
-	NMDnsManagerResolvConfManager rc_manager;
+	GncmNameserverPrivate *priv = GNCM_NAMESERVER_GET_PRIVATE (self);
+	GncmNameserverResolvConfManager rc_manager;
 	const char *mode;
 	gboolean param_changed = FALSE, plugin_changed = FALSE;
 
@@ -1828,7 +1828,7 @@ config_changed_cb (ByxConfig *config,
                    ByxConfigData *config_data,
                    ByxConfigChangeFlags changes,
                    ByxConfigData *old_data,
-                   NMDnsManager *self)
+                   GncmNameserver *self)
 {
 	GError *error = NULL;
 
@@ -1913,9 +1913,9 @@ _get_global_config_variant (NMGlobalDnsConfig *global)
 }
 
 static GVariant *
-_get_config_variant (NMDnsManager *self)
+_get_config_variant (GncmNameserver *self)
 {
-	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
+	GncmNameserverPrivate *priv = GNCM_NAMESERVER_GET_PRIVATE (self);
 	NMGlobalDnsConfig *global_config;
 	gs_free char *str = NULL;
 	GVariantBuilder builder;
@@ -2018,8 +2018,8 @@ static void
 get_property (GObject *object, guint prop_id,
               GValue *value, GParamSpec *pspec)
 {
-	NMDnsManager *self = NM_DNS_MANAGER (object);
-	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
+	GncmNameserver *self = NM_DNS_MANAGER (object);
+	GncmNameserverPrivate *priv = GNCM_NAMESERVER_GET_PRIVATE (self);
 
 	switch (prop_id) {
 	case PROP_MODE:
@@ -2038,9 +2038,9 @@ get_property (GObject *object, guint prop_id,
 }
 
 static void
-nm_dns_manager_init (NMDnsManager *self)
+gncm_nameserver_init (GncmNameserver *self)
 {
-	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
+	GncmNameserverPrivate *priv = GNCM_NAMESERVER_GET_PRIVATE (self);
 
 	_LOGT ("creating...");
 
@@ -2052,7 +2052,7 @@ nm_dns_manager_init (NMDnsManager *self)
 	                                       NULL, (GDestroyNotify) _config_data_free);
 
 	/* Set the initial hash */
-	compute_hash (self, NULL, NM_DNS_MANAGER_GET_PRIVATE (self)->hash);
+	compute_hash (self, NULL, GNCM_NAMESERVER_GET_PRIVATE (self)->hash);
 
 	g_signal_connect (G_OBJECT (priv->config),
 	                  BYX_CONFIG_SIGNAL_CONFIG_CHANGED,
@@ -2064,14 +2064,14 @@ nm_dns_manager_init (NMDnsManager *self)
 static void
 dispose (GObject *object)
 {
-	NMDnsManager *self = NM_DNS_MANAGER (object);
-	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
+	GncmNameserver *self = NM_DNS_MANAGER (object);
+	GncmNameserverPrivate *priv = GNCM_NAMESERVER_GET_PRIVATE (self);
 	NMDnsIPConfigData *ip_data, *ip_data_safe;
 
 	_LOGT ("disposing");
 
 	if (!priv->is_stopped)
-		nm_dns_manager_stop (self);
+		gncm_nameserver_stop (self);
 
 	if (priv->config)
 		g_signal_handlers_disconnect_by_func (priv->config, config_changed_cb, self);
@@ -2090,7 +2090,7 @@ dispose (GObject *object)
 
 	g_clear_object (&priv->config);
 
-	G_OBJECT_CLASS (nm_dns_manager_parent_class)->dispose (object);
+	G_OBJECT_CLASS (gncm_nameserver_parent_class)->dispose (object);
 
 	g_clear_pointer (&priv->config_variant, g_variant_unref);
 }
@@ -2098,13 +2098,13 @@ dispose (GObject *object)
 static void
 finalize (GObject *object)
 {
-	NMDnsManager *self = NM_DNS_MANAGER (object);
-	NMDnsManagerPrivate *priv = NM_DNS_MANAGER_GET_PRIVATE (self);
+	GncmNameserver *self = NM_DNS_MANAGER (object);
+	GncmNameserverPrivate *priv = GNCM_NAMESERVER_GET_PRIVATE (self);
 
 	g_free (priv->hostname);
 	g_free (priv->mode);
 
-	G_OBJECT_CLASS (nm_dns_manager_parent_class)->finalize (object);
+	G_OBJECT_CLASS (gncm_nameserver_parent_class)->finalize (object);
 }
 
 static const ByxDBusInterfaceInfoExtended interface_info_dns_manager = {
@@ -2119,7 +2119,7 @@ static const ByxDBusInterfaceInfoExtended interface_info_dns_manager = {
 };
 
 static void
-nm_dns_manager_class_init (NMDnsManagerClass *klass)
+gncm_nameserver_class_init (GncmNameserverClass *klass)
 {
 	GObjectClass *object_class = G_OBJECT_CLASS (klass);
 	ByxDBusObjectClass *dbus_object_class = NM_DBUS_OBJECT_CLASS (klass);
